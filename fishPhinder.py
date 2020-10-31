@@ -112,6 +112,30 @@ def moveFile(source, dest, mainURL, extraURL=""):
 		shutil.move(source+"/"+mainURL+"/"+extraURL,dest+"/"+mainURL+"/"+extraURL )
 
 
+# takes a screen shot of a website into the fileDirectory based on the main and extra URL
+# returns Nothing
+def takeScreenshot(fileDirectory,mainURL, extraURL=""):
+	base = "http://render-tron.appspot.com/screenshot/"
+	# Grabbing the actual information from the site
+	reponse=urllib.request.urlopen(base+"http://"+mainURL+"/"+extraURL, timeout=5)
+	data=reponse.read()
+
+
+	if not os.path.exists(fileDirectory+"/"+mainURL):
+		os.makedirs(fileDirectory+"/"+mainURL)
+
+	# branching path related to if the URL has the extension bit or not
+	# File path is <new|old>/<mainURL>/<mainURL|extraURL>
+	# The idea is this can then be expanded to have folder created per day and then archived
+	if extraURL == "":
+		with open(fileDirectory+"/"+mainURL+ "/" + mainURL+".png", "wb+") as testFile:
+			testFile.write(data)
+
+	else:
+		with open(fileDirectory+"/"+mainURL+ "/" + extraURL+".png", "wb+") as testFile:
+			testFile.write(data)
+
+
 
 # returns a list of the keys in a yaml file 
 def yamlKeyList(yamlFile):
@@ -149,6 +173,8 @@ def raiseAlert(currDir, screenDir, mainURL, extraURL, hostSite, fileName):
 	print("alert raised for: "+mainURL+"/"+extraURL)
 	print("Matching site: "+hostSite)
 	print("--------")	
+	print("phish ScreenshotShot saved at: "+screenDir+"/"+mainURL+"/"+fileName)
+	print("--------")
 
 
 # evaluates if the phishing site has changed
