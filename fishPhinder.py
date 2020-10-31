@@ -168,10 +168,17 @@ def yamlKeyContentList(key, yamlFile):
 # then use this subPrgram to determine if a proper alert should be raised
 # IE an alert can be raised if text similary or image similarity is above a certain threshhold
 def raiseAlert(currDir, screenDir, mainURL, extraURL, hostSite, fileName):
+	
+
+	textSimilarity = detectKeywords(currDir, mainURL, extraURL, hostSite)
+
+
 	print("---< ALERT >---")
 	print("--------")
 	print("alert raised for: "+mainURL+"/"+extraURL)
 	print("Matching site: "+hostSite)
+	print("--------")	
+	print("text Similarity: "+str(textSimilarity))
 	print("--------")	
 	print("phish ScreenshotShot saved at: "+screenDir+"/"+mainURL+"/"+fileName)
 	print("--------")
@@ -205,6 +212,47 @@ def evaluateSiteDiff(newDir, oldDir, screenDir, mainURL, extraURL, hostSite):
 		moveFile(newDir, oldDir,mainURL, extraURL)
 	elif DEBUG:
 		print("shit matching bro www."+mainURL+"/"+extraURL+"/")
+
+
+
+# detects if specific keywords related to a hostSite are found in a Phishsite
+def detectKeywords(newDir, mainURL, extraURL, hostSite):
+	#  Find the keywords that match to a given hostSite
+	
+	alertWords = yamlKeyContentList(hostSite, ALERT_KEYWORDS)
+	if DEBUG:
+		print("alertWords == "+str(alertWords))
+
+
+	alertWordMatches = 0 
+	if extraURL == "":
+		with open(newDir+"/"+mainURL+ "/" + mainURL, "rb") as siteFile:
+			# for every line  in the files
+			for line in siteFile:
+				
+				currentLine = str(siteFile.readline())
+
+				# for every word in the keywords
+				for word in alertWords:
+					# remove the null entries at the end of tthe  wordlist which  caused issues
+					if len(word) != 0:
+						# remove case  sensitivity and check if word exists in that line
+						if word.lower() in currentLine.lower():
+							alertWordMatches=alertWordMatches+1
+
+	else:
+		with open(newDir+"/"+mainURL+ "/" + extraURL, "rb") as siteFile:
+			for line in siteFile:
+				currentLine = str(siteFile.readline())
+
+				for word in alertWords:
+					if len(word) != 0:
+						if word.lower() in currentLine.lower():
+							alertWordMatches=alertWordMatches+1
+
+
+	return alertWordMatches
+
 
 
 def main():
