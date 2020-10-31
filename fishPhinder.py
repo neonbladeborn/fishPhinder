@@ -137,6 +137,7 @@ def takeScreenshot(fileDirectory,mainURL, extraURL=""):
 
 
 
+
 # returns a list of the keys in a yaml file 
 def yamlKeyList(yamlFile):
 	# collects the keys (main sites) from the config YAML
@@ -168,21 +169,24 @@ def yamlKeyContentList(key, yamlFile):
 # then use this subPrgram to determine if a proper alert should be raised
 # IE an alert can be raised if text similary or image similarity is above a certain threshhold
 def raiseAlert(currDir, screenDir, mainURL, extraURL, hostSite, fileName):
-	
-
-	textSimilarity = detectKeywords(currDir, mainURL, extraURL, hostSite)
-
-
 	print("---< ALERT >---")
+		# Screenshot which can be tweeted out
+	takeScreenshot(screenDir,mainURL,extraURL)
+	
+	# detects how many times a keyword is present in a site
+	textSimilarity = detectKeywords(currDir, mainURL, extraURL, hostSite)
+	imageSimilarity, similarImage = compareImage(screenDir, mainURL, extraURL, hostSite)
+
 	print("--------")
 	print("alert raised for: "+mainURL+"/"+extraURL)
 	print("Matching site: "+hostSite)
 	print("--------")	
 	print("text Similarity: "+str(textSimilarity))
-	print("--------")	
+	print("image Similarity: "+str(imageSimilarity))
+	print("Similar image:" + similarImage)
+	print("--------")
 	print("phish ScreenshotShot saved at: "+screenDir+"/"+mainURL+"/"+fileName)
 	print("--------")
-
 
 # evaluates if the phishing site has changed
 def evaluateSiteDiff(newDir, oldDir, screenDir, mainURL, extraURL, hostSite):
@@ -213,6 +217,44 @@ def evaluateSiteDiff(newDir, oldDir, screenDir, mainURL, extraURL, hostSite):
 	elif DEBUG:
 		print("shit matching bro www."+mainURL+"/"+extraURL+"/")
 
+
+# Compares to see how  similar two images are
+def compareImage(screenDir, mainURL, extraURL, hostSite):
+
+	peakSimilarityScore = 0
+	peakSimilaritySite =  "None"
+	if extraURL ==  "":
+		extraURL = mainURL
+
+	phishImageLocation = str(screenDir)+"/"+str(mainURL)+"/"+str(extraURL)+".png"
+	hostSiteList = os.listdir(str(screenDir)+"/"+str(hostSite))
+
+	if not os.path.exists(str(screenDir)+"/"+str(mainURL)):
+		os.makedirs(str(screenDir)+"/"+str(mainURL))
+	
+	if DEBUG:
+		print("phishImageLocation == " + str(phishImageLocation))
+		print("hostSiteList  == " + str(hostSiteList))
+
+	for hostSiteScreen in hostSiteList:
+		currHostImage = str(screenDir)+"/"+str(hostSite)+"/"+str(hostSiteScreen)
+
+		imageA = cv2.imread(phishImageLocation)
+		imageB = cv2.imread(currHostImage)
+		# convert the images to grayscale
+		grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
+		grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
+
+		# compute the Structural Similarity Index (SSIM) between the two
+		# images, ensuring that the difference image is returned
+		(score, diff) = structural_similarity(grayA, grayB, full=True)
+		diff = (diff * 255).astype("uint8")
+		#print("SSIM: {}".format(score))	
+
+		if format(score) > str(peakSimilarityScore):
+			peakSimilarityScore =  format(score)
+			peakSimilaritySite = str(currHostImage)
+	return peakSimilarityScore, peakSimilaritySite 
 
 
 # detects if specific keywords related to a hostSite are found in a Phishsite
